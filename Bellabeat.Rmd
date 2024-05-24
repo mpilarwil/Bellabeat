@@ -1,0 +1,279 @@
+---
+title: "Bellabeat"
+author: "Pilar Wilches"
+date: "2023-10-03"
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+## Analysis Process for the case study: Bellabeat
+
+### Goal: Analyse data from smart devices to understand consumer use of smart device
+
+First of all we install packages and libraries for data clean and
+visualization
+
+```{r import packages and libraries}
+options(repos = "https://cran.rstudio.com/")
+
+install.packages("here")
+install.packages("skimr")
+install.packages("janitor")
+install.packages("ggplot2")
+
+library("here")
+library("skimr")
+library("janitor")
+library("dplyr")
+library("lubridate")
+library("readr")
+library("ggplot2")
+```
+
+# Work with file dailyIntensities_merged.csv
+
+## 1. Import Data and previsualization
+
+Now, I import the file: dailyIntensities_merged.csv and create the data
+frame, With this data frame I want know the relationship between the
+days of the week and the person activity.
+
+```{r upload data Intensities}
+setwd("/xxx/xxxx/Bellabeat") #change the path here to the path where your file is located
+dailyIntensities_df <- read_csv("dailyIntensities_merged.csv")
+```
+
+Then, I preview the data with different functions for review cols, rows,
+type of data.
+
+```{r preview of data dailyIntensities1}
+
+View(dailyIntensities_df)
+
+glimpse(dailyIntensities_df)
+```
+
+```{r preview of data dailyIntensities2}
+
+colnames(dailyIntensities_df)
+```
+
+## 2. Data cleaning
+
+I check the consistence of data frame
+
+```{r check columns dailyIntensities}
+clean_names(dailyIntensities_df)
+```
+
+When I apply this function, I see that the name of the columns can be
+improved according to the syntax of clean code, so I change the column
+names type snake case
+
+```{r rename colums to snake_case dailyIntensities}
+
+ rename_columns_to_snake_case <- function(dataframe){
+  dataframe %>% 
+    rename_with(~tolower(gsub("([a-z0-9])([A-Z])", "\\1_\\2", .)),.cols = everything())
+ }
+
+dailyIntensities_new_df <- rename_columns_to_snake_case(dailyIntensities_df)
+
+View(dailyIntensities_new_df)
+```
+
+## 3. Manipulation/Processing of data
+
+As I want see the day of week has more or less activity then I work with
+the field activity_data and I convert this field char in date. For this
+I use the library lubridate.
+
+```{r create column day_of_week dailyIntensities}
+dailyIntensities_new_df <- dailyIntensities_new_df %>% 
+  mutate(day_of_week = weekdays(as.Date(activity_day, format="%m/%d/%Y")) )
+```
+
+Now, it is very important to have statistics, below is the comparison:
+
+Day of week vrs. Average active minutes
+
+```{r statistics mean_active_minutes dailyIntensities}
+mean_active_minutes_df <- dailyIntensities_new_df %>% 
+  group_by(day_of_week) %>% 
+  summarize(mean_active_minutes =      round(mean(very_active_minutes+fairly_active_minutes+lightly_active_minutes))) %>% 
+  arrange(mean_active_minutes)
+
+```
+
+Day of week vrs. Sedentary minutes
+
+```{r mean_sedentary_minutes dailyIntensities}
+dailyIntensities_new_df %>% 
+  group_by(day_of_week) %>% 
+  summarize(mean_sedentary_minutes =round(mean(sedentary_minutes))) %>% 
+  arrange(desc(mean_sedentary_minutes))
+```
+
+# Work with file dailyActivity_merged.csv
+
+## 1. Import Data and previsualization
+
+Now, I import the file: dailyActivity_merged.csv and create the data
+frame, With this data frame I want know the relationship between the
+days of the week and the calories, steps and activity in general.
+
+```{r upload data activity}
+setwd("/Users/maria/Bellabeat")
+dailyActivity_df <- read_csv("dailyActivity_merged.csv")
+```
+
+Then, I preview the data with different functions for review cols, rows,
+type of data.
+
+```{r preview of data dailyActivity1}
+
+View(dailyActivity_df)
+
+glimpse(dailyActivity_df)
+```
+
+This visualization is very important, for instance, the column
+ActivityDay is character and must be date type for the analysis.
+
+```{r preview of data dailyActivity2}
+
+colnames(dailyActivity_df)
+```
+
+## 2. Data cleaning
+
+I check the consistence of data frame
+
+```{r check columns dailyActivity}
+clean_names(dailyActivity_df)
+```
+
+When I apply this function, I see that the name of the columns can be
+improved according the syntax of clean code, so I apply the function
+created previously, which changes the column names like snake case
+
+```{r rename colums to snake_case dailyActivity}
+
+dailyActivity_new_df <- rename_columns_to_snake_case(dailyActivity_df)
+
+View(dailyActivity_new_df)
+```
+
+## 3. Manipulation/Processing of data
+
+And this point, I used the same code for change and add the column name
+day_of_week
+
+```{r create column day_of_week dailyActivity}
+dailyActivity_new_df <- dailyActivity_new_df %>% 
+  mutate(day_of_week = weekdays(as.Date(activity_date, format="%m/%d/%Y")) )
+```
+
+Check the new column:
+
+```{r check add column dailyActivity}
+ View(dailyActivity_new_df)
+```
+
+Now, it's statistics' time:
+
+Day of week vrs. Calories
+
+```{r statistics mean_calories dailyActivity}
+ dailyActivity_new_df %>% 
+  group_by(day_of_week) %>% 
+  summarize(mean_calories = round(mean(calories,na.rm = TRUE)), 
+            mean_steps = round(mean(total_steps,na.rm = TRUE))) %>% 
+  arrange(desc(mean_calories))
+
+ mean_calories_df <- dailyActivity_new_df %>% 
+  group_by(day_of_week) %>% 
+  summarize(mean_calories = round(mean(calories, na.rm = TRUE))) %>% 
+  arrange(desc(mean_calories))
+ 
+  mean_total_steps_df <- dailyActivity_new_df %>% 
+  group_by(day_of_week) %>% 
+  summarize(mean_steps = round(mean(total_steps, na.rm = TRUE))) %>% 
+  arrange(desc(mean_steps))
+
+ 
+```
+
+# Visualization of data
+
+In this step, I'll show the different graphics of my data:
+
+ggplot
+
+```{r graphic minutes very active}
+ggplot(data = mean_active_minutes_df) +
+  geom_col(mapping = aes(x= day_of_week, y=mean_active_minutes), fill="#2e8540")+
+  labs(title = "Day of Week vrs. Minutes Very Active",
+       subtitle = "Check out which days are more intense",
+       caption = "FitBit Fitness Tracker Data")
+
+```
+
+```{r graphic calories}
+ggplot(data = mean_calories_df) +
+  geom_col(mapping = aes(x= day_of_week, y=mean_calories), fill="#205493")+
+  labs(title = "Day of Week vrs. Calories",
+       subtitle = "What days have more calories burned?",
+       caption = "FitBit Fitness Tracker Data")
+
+```
+
+```{r calories and distance, message=FALSE, warning=FALSE}
+ggplot(data = dailyActivity_new_df) +
+  geom_point(mapping = aes(x= total_distance, y=calories), color="#e31c3d") +
+  geom_smooth(mapping = aes(x= total_distance, y=calories)) +
+  labs(title = "Distance traveled vrs. Calories burned",
+       subtitle = "Let's find out what registered device",
+       caption = "FitBit Fitness Tracker Data")
+```
+
+```{r sedentary vrs total steps}
+
+ggplot(data=dailyActivity_new_df, aes(x=total_steps, y=sedentary_minutes)) + 
+  geom_point() +
+  labs(title = "Sedentary vrs. Total Steps ",
+       caption = "FitBit Fitness Tracker Data")
+  
+```
+
+# Technical Notes
+
+-   I could have named all variables with clean code I was able to used
+    a function to change the data to the day of week and not repeat
+    code.
+
+-   As I progressed in the project, I became more familiar with the
+    files, so I realized note that I could have started with the
+    activity file and not Intensitive file csv.
+
+-   In data cleaning I didn't delete the day with zero activity because
+    I don't know if it is a mistake, this situation in a real case, I
+    would ask the organization.
+
+# Conclusions
+
+-   Develop sporting events on Saturdays. This day presents the highest
+    intensity of movement reported in the smart devices. The figures
+    reveal that on average on Saturday, women have 240 minutes of high
+    physical activity (4 hours)
+
+-   Thursdays are the day on average that the fewest calories are
+    burned. But how do users know if they are burning enough calories to
+    know if they have healthy habits? The strategy I propose is that on    Thursdays,  through  email and the company's social media accounts, to show content on healthy habits in accordance with what is suggested by the OMS.
+
+-   Create an awareness campaign, making visible the days of greatest
+    sedentary lifestyle.
